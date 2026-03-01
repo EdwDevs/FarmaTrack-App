@@ -40,7 +40,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = "farmatrack-613fb";
 
         function App() {
             const [user, setUser] = useState(null);
@@ -85,13 +84,13 @@
                 };
             }, []);
 
-            // 2. Carga de datos
+            // 2. Carga de datos (Usando las colecciones raíz que ya habías creado)
             useEffect(() => {
                 if (!user) return;
 
-                const farmaciasRef = collection(db, 'artifacts', appId, 'public', 'data', 'farmacias');
-                const productosRef = collection(db, 'artifacts', appId, 'public', 'data', 'productos');
-                const visitasRef = collection(db, 'artifacts', appId, 'public', 'data', 'visitas');
+                const farmaciasRef = collection(db, 'farmacias');
+                const productosRef = collection(db, 'productos');
+                const visitasRef = collection(db, 'visitas');
 
                 const unsubF = onSnapshot(farmaciasRef, (s) => setFarmacias(s.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.error("Error Farmacias:", err));
                 const unsubP = onSnapshot(productosRef, (s) => setProductos(s.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.error("Error Productos:", err));
@@ -104,7 +103,6 @@
                 if (window.lucide) window.lucide.createIcons();
             }, [activeTab, farmacias, productos, visitas, user, authError]);
 
-            // Pantalla de error de configuración
             if (authError) return (
                 <div className="h-screen flex flex-col items-center justify-center p-8 bg-white text-center">
                     <div className="bg-red-100 p-6 rounded-full text-red-600 mb-6">
@@ -190,7 +188,7 @@
                         visitas.slice(0, 5).map(v => (
                             <div key={v.id} className="bg-white p-4 rounded-xl border-l-4 border-blue-600 shadow-sm flex justify-between items-center transition-all hover:translate-x-1">
                                 <div>
-                                    <p className="font-bold text-gray-800">Visita Exitosa</p>
+                                    <p className="font-bold text-gray-800">Visita realizada</p>
                                     <p className="text-[10px] text-gray-400 font-bold uppercase">{new Date(v.fecha).toLocaleString()}</p>
                                 </div>
                                 <i data-lucide="check-circle-2" className="text-green-500 w-6 h-6"></i>
@@ -209,7 +207,7 @@
 
             const guardar = async (e) => {
                 e.preventDefault();
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'farmacias'), { 
+                await addDoc(collection(db, 'farmacias'), { 
                     nombre: nombre.toUpperCase(), 
                     cadena, 
                     zona: zona.toUpperCase() 
@@ -243,7 +241,7 @@
                         {data.map(f => (
                             <div key={f.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between border border-gray-100">
                                 <div><p className="font-bold text-gray-800">{f.nombre}</p><p className="text-xs text-blue-500 font-bold uppercase">{f.cadena} · {f.zona}</p></div>
-                                <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'farmacias', f.id))} className="text-red-200 hover:text-red-500 transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
+                                <button onClick={() => deleteDoc(doc(db, 'farmacias', f.id))} className="text-red-200 hover:text-red-500 transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                             </div>
                         ))}
                     </div>
@@ -258,7 +256,7 @@
 
             const guardar = async (e) => {
                 e.preventDefault();
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'productos'), { 
+                await addDoc(collection(db, 'productos'), { 
                     nombre: nombre.toUpperCase(), 
                     presentacion: presentacion.toUpperCase(), 
                     marca: 'ABBOTT' 
@@ -288,7 +286,7 @@
                         {data.map(p => (
                             <div key={p.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between border-l-4 border-gray-800">
                                 <div><p className="font-bold text-gray-800">{p.nombre}</p><p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">ABBOTT · {p.presentacion}</p></div>
-                                <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'productos', p.id))} className="text-red-200 hover:text-red-500 transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
+                                <button onClick={() => deleteDoc(doc(db, 'productos', p.id))} className="text-red-200 hover:text-red-500 transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                             </div>
                         ))}
                     </div>
@@ -309,7 +307,7 @@
             };
 
             const guardar = async () => {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'visitas'), {
+                await addDoc(collection(db, 'visitas'), {
                     fecha: new Date().toISOString(),
                     id_farmacia: sel.id,
                     estado_inventario: inventario
@@ -342,7 +340,7 @@
                         <button onClick={() => setSel(null)} className="p-2 hover:bg-gray-100 rounded-full"><i data-lucide="arrow-left" className="w-6 h-6 text-gray-400"></i></button>
                         <div className="flex-1 text-center">
                             <h2 className="text-lg font-black text-blue-700 leading-tight">{sel.nombre}</h2>
-                            {ultima && <p className="text-[10px] text-gray-400 font-bold uppercase">Última: {ultima}</p>}
+                            {ultima && <p className="text-[10px] text-gray-400 font-bold uppercase">Anterior: {ultima}</p>}
                         </div>
                     </div>
 
@@ -368,7 +366,7 @@
         }
 
         function MetricasView({ farmacias, visitas, productos }) {
-            if (visitas.length === 0) return <div className="h-full flex flex-col items-center justify-center p-10 bg-white rounded-3xl border border-dashed"><i data-lucide="bar-chart" className="w-20 h-20 text-gray-100 mb-4"></i><p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest text-center">Faltan reportes para el análisis</p></div>;
+            if (visitas.length === 0) return <div className="h-full flex flex-col items-center justify-center p-10 bg-white rounded-3xl border border-dashed"><i data-lucide="bar-chart" className="w-20 h-20 text-gray-100 mb-4"></i><p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest text-center">Faltan reportes para el análisis aún</p></div>;
 
             const stats = useMemo(() => {
                 const s = { cadenas: {}, zonas: {}, refs: {} };
