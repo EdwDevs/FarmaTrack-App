@@ -61,8 +61,16 @@ export default function App() {
   const [productos, setProductos] = useState([]);
   const [visitas, setVisitas] = useState([]);
 
-  // Monitorear conexión a internet
+  // Monitorear conexión a internet e inyectar diseño
   useEffect(() => {
+    // Truco para GitHub Pages: Cargar Tailwind dinámicamente si no existe
+    if (!document.getElementById('tailwind-cdn')) {
+      const tailwindScript = document.createElement('script');
+      tailwindScript.id = 'tailwind-cdn';
+      tailwindScript.src = 'https://cdn.tailwindcss.com';
+      document.head.appendChild(tailwindScript);
+    }
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
@@ -654,7 +662,7 @@ function EstadisticasView({ farmacias, visitas, productos }) {
             </h3>
             <div className="space-y-3">
               {topAgotados.map((item, index) => (
-                <div className="flex items-center">
+                <div key={item.id} className="flex items-center">
                   <span className="font-bold text-red-400 mr-3 w-4">{index + 1}.</span>
                   <div>
                     <p className="font-bold text-gray-800 text-sm">
